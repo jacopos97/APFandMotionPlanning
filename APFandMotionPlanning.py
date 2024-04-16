@@ -172,19 +172,37 @@ def apf(ax, nodes, path, margin, step_size, fig, attractive_delta, sensor_range,
     x, y = sp.symbols('x y')
     rep_coordinates = (x, y)
     rep_gradient_func = [sp.diff(repulsive_potential(rep_coordinates, sensor_range, sec_dist, repulsive_potential_beta), coord) for coord in rep_coordinates]
-    #print(path)
-    for i in range(1, len(path)):
+    i = 1
+    local_minimum = False
+    while i < len(path) and not local_minimum:
+    #while i < len(path):
         sub_goal = nodes[path[i]]
-        #print(path[i])
-        #print(sub_goal)
-        #print(point_pos)
-        #while not loop_condition(sub_goal, point_pos, margin, attractive_delta):
-        while not loop_condition(sub_goal, point_pos, margin):
+        near_points = []
+        while not loop_condition(sub_goal, point_pos, margin) and not local_minimum:
+            #while not loop_condition(sub_goal, point_pos, margin):
             near_obs = get_robot_obstacles(point_pos, obstacles, sensor_range)
-            point_pos = move_to_goal(sub_goal, point_pos, step_size, attractive_delta, attr_k, rep_k, near_obs, rep_gradient_func, rep_coordinates)
+            new_point_pos = move_to_goal(sub_goal, point_pos, step_size, attractive_delta, attr_k, rep_k, near_obs, rep_gradient_func, rep_coordinates)
+            local_minimum, near_points = check_local_minimum(local_minimum, near_points, new_point_pos)
+            point_pos = new_point_pos
             positions.append(point_pos)
+        i += 1
     ani = FuncAnimation(fig, update, frames=len(positions), fargs=(point, circle, positions), interval=1, repeat=False)
     return ani
+
+
+def check_local_minimum(local_minimum, near_points, new_point_pos):
+    if len(near_points) == 0:
+        near_points.append(new_point_pos)
+    else:
+        distance = np.sqrt((new_point_pos[0] - near_points[0][0]) ** 2 + (new_point_pos[1] - near_points[0][1]) ** 2)
+        if distance <= 0.0000000001:
+            if len(near_points) == 1000:
+                local_minimum = True
+            else:
+                near_points.append(new_point_pos)
+        else:
+            near_points = []
+    return local_minimum, near_points
 
 
 def update(frame, point, circle, positions):
@@ -246,7 +264,7 @@ def get_point_coordinates(point):
 
 def main():
     known_obs_number = 10
-    unknown_obs_number = 5
+    unknown_obs_number = 10
     eps = 6
     num_iter = 1000
     margin = 0.75
@@ -273,7 +291,7 @@ def main():
 
     plt.show(block=False)
 
-    plt.pause(3)
+    plt.pause(2)
     ax.cla()
     obs += generate_obstacles(known_obs_number+unknown_obs_number, obs, 100, 'red', [start, goal], security_distance)
     plot_obs(ax, obs)
@@ -289,7 +307,7 @@ def main():
     nx.draw_networkx_nodes(graph, pos=nodes_g, node_color=path_colors, nodelist=shortest_path, node_size=30)
     nx.draw_networkx_edges(graph, pos=nodes_g, edgelist=list(nx.utils.pairwise(shortest_path)))
     plt.draw()
-    plt.pause(2)
+    plt.pause(1)
     ani = apf(ax, nodes_g, shortest_path, margin, step_size, fig, attractive_delta, sensor_range, attractive_constant, repulsive_constant, security_distance, obs, repulsive_potential_beta)
     plt.draw()
     #plt.pause(20)
