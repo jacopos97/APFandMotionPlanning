@@ -8,23 +8,17 @@ import random
 import math
 import numpy as np
 import sympy as sp
-from matplotlib.patches import PathPatch
 
 
 def random_point(r1, r2, obs, name):
     x = random.randrange(r1, r2)
     y = random.randrange(r1, r2)
     for box in get_boxes(obs):
-        if collisions(box, x, y):
+        if box.contains(x, y):
             x, y = random_point(r1, r2, obs, name)
     if name == 'start' or name == 'goal':
         plt.text(x, y, name, fontsize=12)
     return x, y
-
-
-def collisions(box, x, y):
-    collision = box.contains(x, y)
-    return collision
 
 
 def get_boxes(obs):
@@ -62,18 +56,35 @@ def node_color(g_nodes, path):
     return c
 
 
-def generate_obstacles(obs_number, obs, box_range, color):#TODO: modifica la funzione in modo che eviti di generare ostacoli sul robot(utilizza la security distance)
+def generate_obstacles(obs_number, obs, box_range, color, occupied_points, security_distance):
     while len(obs) < obs_number:
         a = random.randrange(0, box_range)
         b = random.randrange(0, box_range)
         ob = patches.Rectangle((a, b), random.randint(1, 15), random.randint(1, 15), color=color)
-        if len(obs) == 0:
+        ob_validity = check_obstacle_validity(ob, occupied_points, security_distance)
+        if len(obs) == 0 and ob_validity:
             obs.append(ob)
-        elif len(obs) > 0 and not obs_collision(obs, ob):
+        elif len(obs) > 0 and not obs_collision(obs, ob) and ob_validity:
             obs.append(ob)
         else:
             pass
     return obs
+
+
+def check_obstacle_validity(obstacle, occupied_points, security_distance):
+    validity = True
+    i = 0
+    while validity and i < len(occupied_points):
+        bbox = obstacle.get_bbox()
+        if bbox.contains(occupied_points[i][0], occupied_points[i][1]):
+            validity = False
+        else:
+            distance_x = max(bbox.x0 - occupied_points[i][0], 0, occupied_points[i][0] - bbox.x1)
+            distance_y = max(bbox.y0 - occupied_points[i][1], 0, occupied_points[i][1] - bbox.y1)
+            if np.sqrt(distance_x ** 2 + distance_y ** 2) <= security_distance:
+                validity = False
+        i += 1
+    return validity
 
 
 def plot_obs(ax, obs):
@@ -249,7 +260,7 @@ def main():
 
     fig, ax = plt.subplots(figsize=(15, 15))
     obs = []
-    obs = generate_obstacles(known_obs_number, obs, 100, 'silver')
+    obs = generate_obstacles(known_obs_number, obs, 100, 'silver', [], security_distance)
     #print(obs)
     plot_obs(ax, obs)
 
@@ -262,10 +273,10 @@ def main():
 
     plt.show(block=False)
 
-    plt.pause(0.5)
+    plt.pause(3)
     ax.cla()
-    #obs += generate_obstacles(known_obs_number+unknown_obs_number, obs, 100, 'red')
-    plot_obs(ax, obs)#TODO: fai apparire i nuovi ostacoli prima di far partire l'animazione
+    obs += generate_obstacles(known_obs_number+unknown_obs_number, obs, 100, 'red', [start, goal], security_distance)
+    plot_obs(ax, obs)
     shortest_path = nx.shortest_path(graph, 'start', 'goal')
     path_colors = []
     for node in shortest_path:
@@ -277,8 +288,11 @@ def main():
     plt.text(goal[0], goal[1], 'goal', fontsize=12)
     nx.draw_networkx_nodes(graph, pos=nodes_g, node_color=path_colors, nodelist=shortest_path, node_size=30)
     nx.draw_networkx_edges(graph, pos=nodes_g, edgelist=list(nx.utils.pairwise(shortest_path)))
+    plt.draw()
+    plt.pause(2)
     ani = apf(ax, nodes_g, shortest_path, margin, step_size, fig, attractive_delta, sensor_range, attractive_constant, repulsive_constant, security_distance, obs, repulsive_potential_beta)
     plt.draw()
+    #plt.pause(20)
     plt.show()#TODO: risolvi i possibili minimi locali
 
 
