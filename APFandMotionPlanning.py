@@ -329,7 +329,7 @@ def main():
     known_obs_number = 10
     unknown_obs_number = 10
     eps = 6
-    num_iter = 1000
+    min_num_nodes = 1000
     margin = 0.85
     step_size = 0.35
     attractive_delta = 0.15
@@ -349,7 +349,7 @@ def main():
     goal = random_point(80, 98, obs, 'goal')
     graph = nx.Graph()
     graph, nodes_g = create_graph(graph, start, goal)
-    prm(graph, nodes_g, 2, 98, obs, eps, num_iter)
+    prm(graph, nodes_g, 2, 98, obs, eps, min_num_nodes)
     plt.savefig('video/prm.png')
     plt.pause(5)
 
@@ -368,7 +368,7 @@ def main():
     plt.pause(30)
 
     if local_minimum:
-        escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, goal, known_obs, local_minimum, margin, max_escape_local_minimum, num_iter, obs, repulsive_constant, repulsive_potential_beta, robot_info, security_distance, sensor_range, step_size)
+        escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, goal, known_obs, local_minimum, margin, max_escape_local_minimum, min_num_nodes, obs, repulsive_constant, repulsive_potential_beta, robot_info, security_distance, sensor_range, step_size)
 
 
 if __name__ == '__main__':

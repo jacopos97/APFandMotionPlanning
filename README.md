@@ -21,7 +21,7 @@ Nella funzione main() del codice sono presenti dei parametri che possono variare
    
 - **eps:** costante epsilon con cui si trova gli epsilon-neighbors con la PRM;
    
-- **num_iter:** numero minimo di nodi della PRM.
+- **min_num_nodes:** numero minimo di nodi della PRM.
 
 - **margin:** distanza per la quale un subgoal è considerato raggiunto;
 
