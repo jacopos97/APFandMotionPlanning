@@ -176,7 +176,8 @@ def search_new_unknown_obs(unknown_obs, near_obs):
     return unknown_obs
 
 
-def apf(ax, nodes, path, margin, step_size, fig, attractive_delta, sensor_range, attr_k, rep_k, sec_dist, obstacles, repulsive_potential_beta):
+def apf(ax, nodes, path, margin, step_size, fig, attractive_delta, sensor_range, attr_k, rep_k, sec_dist, obstacles,
+        repulsive_potential_beta):
     point, = ax.plot(nodes["start"][0], nodes["start"][1], 'o', color='dodgerblue')
     circle = plt.Circle(nodes["start"], sensor_range, color='lightblue', fill=True, zorder=0)
     ax.add_artist(circle)
@@ -185,7 +186,9 @@ def apf(ax, nodes, path, margin, step_size, fig, attractive_delta, sensor_range,
     positions = [point_pos]
     x, y = sp.symbols('x y')
     rep_coordinates = (x, y)
-    rep_gradient_func = [sp.diff(repulsive_potential(rep_coordinates, sensor_range, sec_dist, repulsive_potential_beta), coord) for coord in rep_coordinates]
+    rep_gradient_func = [
+        sp.diff(repulsive_potential(rep_coordinates, sensor_range, sec_dist, repulsive_potential_beta), coord) for coord
+        in rep_coordinates]
     i = 1
     local_minimum = False
     unknown_obs = []
@@ -195,15 +198,17 @@ def apf(ax, nodes, path, margin, step_size, fig, attractive_delta, sensor_range,
         while not loop_condition(sub_goal, point_pos, margin) and not local_minimum:
             near_obs, near_obs_point = get_robot_obstacles(point_pos, obstacles, sensor_range)
             unknown_obs = search_new_unknown_obs(unknown_obs, near_obs)
-            new_point_pos = move_to_goal(sub_goal, point_pos, step_size, attractive_delta, attr_k, rep_k, near_obs_point, rep_gradient_func, rep_coordinates)
+            new_point_pos = move_to_goal(sub_goal, point_pos, step_size, attractive_delta, attr_k, rep_k,
+                                         near_obs_point, rep_gradient_func, rep_coordinates)
             local_minimum, near_points = check_local_minimum(local_minimum, near_points, new_point_pos)
             point_pos = new_point_pos
             positions.append(point_pos)
         i += 1
-    ani = FuncAnimation(fig, update, frames=len(positions), fargs=(point, circle, positions), interval=0.2, repeat=False)
+    ani = FuncAnimation(fig, update, frames=len(positions), fargs=(point, circle, positions), interval=0.2,
+                        repeat=False)
     robot_info = {}
     if local_minimum:
-        robot_info['robot_pos'] = positions[len(positions)-1]
+        robot_info['robot_pos'] = positions[len(positions) - 1]
         robot_info['unknown_obs'] = unknown_obs
     return ani, local_minimum, robot_info
 
@@ -231,10 +236,11 @@ def update(frame, point, circle, positions):
     return point, circle
 
 
-def move_to_goal(goal, point_pos, step_size, attractive_delta, attr_k, rep_k, near_obs, repulsive_gradient_func, repulsive_coordinates):
+def move_to_goal(goal, point_pos, step_size, attractive_delta, attr_k, rep_k, near_obs, repulsive_gradient_func,
+                 repulsive_coordinates):
     attr_anti_grad = attractive_anti_gradient(goal, point_pos, attractive_delta)
     rep_anti_grad = repulsive_anti_gradient(repulsive_gradient_func, repulsive_coordinates, near_obs)
-    anti_grad = attr_k*attr_anti_grad + rep_k*rep_anti_grad
+    anti_grad = attr_k * attr_anti_grad + rep_k * rep_anti_grad
     point_pos = point_pos + step_size * anti_grad
     return point_pos[0], point_pos[1]
 
@@ -242,7 +248,7 @@ def move_to_goal(goal, point_pos, step_size, attractive_delta, attr_k, rep_k, ne
 def attractive_anti_gradient(goal, point_pos, attractive_delta):
     difference = np.array(goal, dtype=np.float32) - np.array(point_pos, dtype=np.float32)
     if np.linalg.norm(difference) > attractive_delta:
-        return (difference/np.linalg.norm(difference))*attractive_delta
+        return (difference / np.linalg.norm(difference)) * attractive_delta
     else:
         return difference
 
@@ -258,9 +264,9 @@ def repulsive_anti_gradient(gradient_func, coordinates, near_obs):
 
 
 def repulsive_potential(coordinates, sensor_range, sec_dist, repulsive_potential_beta):
-    first_operand = 1/(sp.sqrt(coordinates[0]**2+coordinates[1]**2)-sec_dist)
-    second_operand = 1/(sensor_range-sec_dist)
-    return (1/repulsive_potential_beta)*((first_operand-second_operand) ** repulsive_potential_beta)
+    first_operand = 1 / (sp.sqrt(coordinates[0] ** 2 + coordinates[1] ** 2) - sec_dist)
+    second_operand = 1 / (sensor_range - sec_dist)
+    return (1 / repulsive_potential_beta) * ((first_operand - second_operand) ** repulsive_potential_beta)
 
 
 def loop_condition(goal, point_pos, margin):
@@ -293,7 +299,9 @@ def add_new_known_obs(known_obstacles, unknown_obstacles):
     return known_obstacles
 
 
-def escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, goal, known_obs, local_minimum, margin, max_escape_local_minimum, num_iter, obs, repulsive_constant, repulsive_potential_beta, robot_info, security_distance, sensor_range, step_size):
+def escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, goal, known_obs, local_minimum, margin,
+                         max_escape_local_minimum, num_iter, obs, repulsive_constant, repulsive_potential_beta,
+                         robot_info, security_distance, sensor_range, step_size):
     i = 0
     while local_minimum and i < max_escape_local_minimum:
         ax.cla()
@@ -305,8 +313,8 @@ def escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, go
         graph = nx.Graph()
         graph, nodes_g = create_graph(graph, start, goal)
         prm(graph, nodes_g, 2, 98, known_obs, eps, num_iter)
-        string = "video/prm_local_minimum" + str(i+1) + ".png"
-        plt.savefig(string)
+        string = "video/prm_local_minimum" + str(i + 1) + ".png"
+        #plt.savefig(string)
         plt.pause(5)
 
         ax.cla()
@@ -315,12 +323,14 @@ def escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, go
         shortest_path = nx.shortest_path(graph, 'start', 'goal')
         draw_path(goal, graph, nodes_g, shortest_path, start)
         string = "video/path_local_minimum" + str(i + 1) + ".png"
-        plt.savefig(string)
+        #plt.savefig(string)
         plt.pause(1)
 
-        ani, local_minimum, robot_info = apf(ax, nodes_g, shortest_path, margin, step_size, fig, attractive_delta, sensor_range, attractive_constant, repulsive_constant, security_distance, obs, repulsive_potential_beta)
-        string = "video/animation_local_minimum" + str(i+1) + ".mp4"
-        ani.save(string, writer='ffmpeg', fps=40)
+        ani, local_minimum, robot_info = apf(ax, nodes_g, shortest_path, margin, step_size, fig, attractive_delta,
+                                             sensor_range, attractive_constant, repulsive_constant, security_distance,
+                                             obs, repulsive_potential_beta)
+        string = "video/animation_local_minimum" + str(i + 1) + ".mp4"
+        #ani.save(string, writer='ffmpeg', fps=40)
         plt.pause(30)
         i += 1
 
@@ -350,26 +360,33 @@ def main():
     graph = nx.Graph()
     graph, nodes_g = create_graph(graph, start, goal)
     prm(graph, nodes_g, 2, 98, obs, eps, min_num_nodes)
-    plt.savefig('video/prm.png')
+    #plt.savefig('video/prm.png')
     plt.pause(5)
 
     ax.cla()
     ax.set_aspect('equal')
     known_obs = obs.copy()
-    obs = generate_obstacles(known_obs_number+unknown_obs_number, obs, 100, 'red', [start, goal], security_distance)
+    obs = generate_obstacles(known_obs_number + unknown_obs_number, obs, 100, 'red', [start, goal], security_distance)
     plot_obs(ax, obs)
     shortest_path = nx.shortest_path(graph, 'start', 'goal')
     draw_path(goal, graph, nodes_g, shortest_path, start)
-    plt.savefig('video/path.png')
+    #plt.savefig('video/path.png')
     plt.pause(1)
 
-    ani, local_minimum, robot_info = apf(ax, nodes_g, shortest_path, margin, step_size, fig, attractive_delta, sensor_range, attractive_constant, repulsive_constant, security_distance, obs, repulsive_potential_beta)
-    ani.save('video/animation.mp4', writer='ffmpeg', fps=40)
+    ani, local_minimum, robot_info = apf(ax, nodes_g, shortest_path, margin, step_size, fig, attractive_delta,
+                                         sensor_range, attractive_constant, repulsive_constant, security_distance, obs,
+                                         repulsive_potential_beta)
+    #ani.save('video/animation.mp4', writer='ffmpeg', fps=40)
     plt.pause(30)
 
     if local_minimum:
-        escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, goal, known_obs, local_minimum, margin, max_escape_local_minimum, min_num_nodes, obs, repulsive_constant, repulsive_potential_beta, robot_info, security_distance, sensor_range, step_size)
+        escape_local_minimum(attractive_constant, attractive_delta, ax, eps, fig, goal, known_obs, local_minimum,
+                             margin, max_escape_local_minimum, min_num_nodes, obs, repulsive_constant,
+                             repulsive_potential_beta, robot_info, security_distance, sensor_range, step_size)
 
 
 if __name__ == '__main__':
     main()
+
+    #Se si vuole produrre un video, bisogna togliere dai commenti i vari plt.savefig e ani.save.
+    #Utilizzare poi un programma di video editing per trasformare le figure in video e concatenare tutti i file .mp4.
